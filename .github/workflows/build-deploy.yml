@@ -9,29 +9,33 @@ jobs:
   Windows-latest:
       runs-on: windows-latest
       steps:
-        - name: OIDC Login to Azure Public Cloud with AzPowershell (enableAzPSSession true)
-          uses: azure/login@v1
-          with:
-            client-id: ${{ secrets.AZURE_CLIENT_ID }}
-            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            enable-AzPSSession: true
+      - name: 'Checkout Github Action'
+        uses: actions/checkout@master
 
-- uses: azure/docker-login@v1
-      with:
-        login-server: ${{ secrets.REGISTRY_SERVER }}
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: OIDC Login to Azure Public Cloud with AzPowershell (enableAzPSSession true)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
 
-    - run: |
-        docker build . -t ${{ secrets.REGISTRY_SERVER }}/remixazuredocker:${{ github.sha }}
-        docker push ${{ secrets.REGISTRY_SERVER }}/remixazuredocker:${{ github.sha }}
+      - uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.REGISTRY_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
-    - uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'remixazuredocker'
-        images: '${{ secrets.REGISTRY_SERVER }}/remixazuredocker:${{ github.sha }}'
+      - run: |
+          docker build . -t ${{ secrets.REGISTRY_SERVER }}/remixazuredocker:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_SERVER }}/remixazuredocker:${{ github.sha }}
 
-    - name: Azure logout
-      run: |
-        az logout
+      - uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'remix-web-app-for-containers'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: '${{ secrets.REGISTRY_SERVER }}/remixazuredocker:${{ github.sha }}'
+
+      - name: Azure logout
+        run: |
+          az logout
